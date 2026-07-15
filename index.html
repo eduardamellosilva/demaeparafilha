@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De Mãe para Filha - Gestão de Confeitaria</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Navbar for Mobile -->
+    <header class="top-navbar">
+        <button class="btn-hamburger" id="btn-hamburger-mobile" title="Menu">
+            <i data-lucide="menu"></i>
+        </button>
+        <div class="top-brand">
+            <span class="brand-icon">🍰</span>
+            <span class="brand-name">De Mãe para Filha</span>
+        </div>
+        <div class="top-spacer"></div>
+    </header>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <span class="brand-icon">🍰</span>
+                <h1 class="brand-name">De Mãe para Filha</h1>
+                <button class="btn-close-sidebar" id="btn-close-sidebar" title="Fechar Menu">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <a href="#" class="menu-item active" data-tab="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Painel Geral</span>
+                </a>
+                <a href="#" class="menu-item" data-tab="vendas">
+                    <i data-lucide="shopping-bag"></i>
+                    <span>Minhas Vendas</span>
+                </a>
+                <a href="#" class="menu-item" data-tab="gastos">
+                    <i data-lucide="receipt"></i>
+                    <span>Meus Gastos</span>
+                </a>
+                <a href="#" class="menu-item" data-tab="precificacao">
+                    <i data-lucide="calculator"></i>
+                    <span>Precificação</span>
+                </a>
+                <a href="#" class="menu-item" data-tab="configuracoes">
+                    <i data-lucide="settings"></i>
+                    <span>Configurações</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <p class="footer-text">Feito para Confeiteiras(os) ❤️</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-left-group">
+                    <button class="btn-hamburger-desktop" id="btn-hamburger-desktop" title="Recolher Menu">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div class="header-title">
+                        <h2 id="tab-title">Painel Geral</h2>
+                        <p id="tab-subtitle" class="text-muted">Bem-vindo(a) de volta! Veja como está sua confeitaria hoje.</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" id="btn-quick-sale">
+                        <i data-lucide="plus"></i> Nova Venda
+                    </button>
+                </div>
+            </header>
+
+            <!-- Tab Content: Dashboard -->
+            <section id="tab-dashboard" class="tab-pane active">
+                <!-- Summary Cards -->
+                <div class="metrics-grid">
+                    <div class="metric-card card-ganhos">
+                        <div class="metric-info">
+                            <span class="metric-label">Ganhos do Mês</span>
+                            <h3 class="metric-value" id="dash-ganhos">R$ 0,00</h3>
+                            <span class="metric-subtext text-success" id="dash-ganhos-count">0 vendas realizadas</span>
+                        </div>
+                        <div class="metric-icon">
+                            <i data-lucide="trending-up"></i>
+                        </div>
+                    </div>
+
+                    <div class="metric-card card-gastos">
+                        <div class="metric-info">
+                            <span class="metric-label">Gastos do Mês</span>
+                            <h3 class="metric-value" id="dash-gastos">R$ 0,00</h3>
+                            <span class="metric-subtext text-danger" id="dash-gastos-count">0 despesas registradas</span>
+                        </div>
+                        <div class="metric-icon">
+                            <i data-lucide="trending-down"></i>
+                        </div>
+                    </div>
+
+                    <div class="metric-card card-lucro">
+                        <div class="metric-info">
+                            <span class="metric-label">Lucro Líquido</span>
+                            <h3 class="metric-value" id="dash-lucro">R$ 0,00</h3>
+                            <span class="metric-subtext text-muted" id="dash-lucro-percent">Margem de 0%</span>
+                        </div>
+                        <div class="metric-icon">
+                            <i data-lucide="dollar-sign"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Details Grid -->
+                <div class="dashboard-details">
+                    <!-- Chart Section -->
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h4 class="card-title">Desempenho Financeiro</h4>
+                            <p class="card-subtitle">Comparativo mensal de ganhos e gastos</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="financeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deliveries Section -->
+                    <div class="card deliveries-card">
+                        <div class="card-header">
+                            <h4 class="card-title">Próximas Entregas</h4>
+                            <p class="card-subtitle">Encomendas agendadas para os próximos dias</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="delivery-list" id="upcoming-deliveries-list">
+                                <!-- Dynamic delivery items -->
+                                <div class="empty-state">
+                                    <i data-lucide="calendar"></i>
+                                    <p>Nenhuma entrega agendada por enquanto.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Vendas -->
+            <section id="tab-vendas" class="tab-pane">
+                <div class="table-controls">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="vendas-search" placeholder="Buscar cliente ou produto...">
+                    </div>
+                    <div class="filter-box">
+                        <select id="vendas-filter-status" class="form-control">
+                            <option value="todos">Todos os Status</option>
+                            <option value="proximas">Próximas Encomendas</option>
+                            <option value="pendente-pago">Pagamento Pendente</option>
+                            <option value="pago">Pago</option>
+                            <option value="pendente-entrega">Entrega Pendente</option>
+                            <option value="entregue">Entregue</option>
+                        </select>
+                        <button class="btn btn-primary" id="btn-add-sale">
+                            <i data-lucide="plus"></i> Novo Pedido
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card table-card">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Cliente / Contato</th>
+                                    <th>Produto / Qtd</th>
+                                    <th>Total (R$)</th>
+                                    <th>Data de Entrega</th>
+                                    <th>Status Pag.</th>
+                                    <th>Status Entrega</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vendas-table-body">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Gastos -->
+            <section id="tab-gastos" class="tab-pane">
+                <div class="table-controls">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="gastos-search" placeholder="Buscar por descrição...">
+                    </div>
+                    <div class="filter-box">
+                        <select id="gastos-filter-category" class="form-control">
+                            <option value="todos">Todas as Categorias</option>
+                            <option value="Ingredientes">Ingredientes</option>
+                            <option value="Embalagens">Embalagens</option>
+                            <option value="Utensílios/Equipamentos">Utensílios/Equipamentos</option>
+                            <option value="Energia/Água/Gás">Energia/Água/Gás</option>
+                            <option value="Marketing/Divulgação">Marketing/Divulgação</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                        <button class="btn btn-primary" id="btn-add-expense">
+                            <i data-lucide="plus"></i> Registrar Gasto
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card table-card">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Descrição</th>
+                                    <th>Categoria</th>
+                                    <th>Valor (R$)</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gastos-table-body">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Precificação -->
+            <section id="tab-precificacao" class="tab-pane">
+                <div class="tabs-sub">
+                    <button class="btn btn-sub-tab active" data-sub-tab="insumos">Ingredientes (Insumos)</button>
+                    <button class="btn btn-sub-tab" data-sub-tab="receitas">Custo de Receitas</button>
+                </div>
+
+                <!-- Sub-tab: Insumos -->
+                <div id="sub-tab-insumos" class="sub-tab-pane active">
+                    <div class="table-controls">
+                        <div class="search-box">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="insumos-search" placeholder="Buscar ingrediente...">
+                        </div>
+                        <button class="btn btn-primary" id="btn-add-insumo">
+                            <i data-lucide="plus"></i> Novo Ingrediente
+                        </button>
+                    </div>
+
+                    <div class="card table-card">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Ingrediente</th>
+                                        <th>Embalagem Comercial</th>
+                                        <th>Preço de Compra</th>
+                                        <th>Custo por Medida</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="insumos-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-tab: Receitas -->
+                <div id="sub-tab-receitas" class="sub-tab-pane">
+                    <div class="table-controls">
+                        <div class="search-box">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="receitas-search" placeholder="Buscar receita...">
+                        </div>
+                        <button class="btn btn-primary" id="btn-add-receita">
+                            <i data-lucide="plus"></i> Nova Receita
+                        </button>
+                    </div>
+
+                    <div class="card table-card">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Receita</th>
+                                        <th>Rendimento</th>
+                                        <th>Custo de Produção</th>
+                                        <th>Custo Unitário</th>
+                                        <th>Preço Sugerido (Venda)</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="receitas-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Configurações -->
+            <section id="tab-configuracoes" class="tab-pane">
+                <div class="config-grid">
+                    <!-- Backup Card -->
+                    <div class="card config-card">
+                        <div class="card-header">
+                            <h4 class="card-title">Backup e Segurança</h4>
+                            <p class="card-subtitle">Salve ou restaure seus dados localmente.</p>
+                        </div>
+                        <div class="card-body config-buttons">
+                            <p class="text-sm">Seus dados ficam armazenados de forma 100% segura no seu próprio computador (navegador). Para não perdê-los se limpar o navegador ou para transferir de aparelho, use as ferramentas abaixo:</p>
+                            
+                            <div class="btn-group-vertical">
+                                <button class="btn btn-outline" id="btn-export-backup">
+                                    <i data-lucide="download"></i> Exportar Backup (Baixar Dados)
+                                </button>
+                                
+                                <label class="btn btn-outline btn-upload-label">
+                                    <i data-lucide="upload"></i> Importar Backup (Enviar Dados)
+                                    <input type="file" id="btn-import-backup" accept=".json" style="display:none">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reset & Seed Card -->
+                    <div class="card config-card danger-zone">
+                        <div class="card-header">
+                            <h4 class="card-title">Área de Testes</h4>
+                            <p class="card-subtitle">Comandos rápidos para gerenciar seu banco de dados local.</p>
+                        </div>
+                        <div class="card-body config-buttons">
+                            <p class="text-sm">Deseja começar com dados fictícios para testar o sistema? Ou quer limpar todos os dados?</p>
+                            <div class="btn-group-vertical">
+                                <button class="btn btn-secondary" id="btn-seed-data">
+                                    <i data-lucide="sparkles"></i> Carregar Dados Demonstrativos
+                                </button>
+                                <button class="btn btn-danger" id="btn-clear-db">
+                                    <i data-lucide="trash-2"></i> Excluir Todos os Dados
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal: Adicionar/Editar Venda -->
+    <div class="modal" id="modal-venda">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-venda-title">Novo Pedido / Venda</h3>
+                <button class="modal-close" data-modal="modal-venda">&times;</button>
+            </div>
+            <form id="form-venda">
+                <input type="hidden" id="venda-id">
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <label for="venda-cliente">Nome do Cliente *</label>
+                        <input type="text" id="venda-cliente" class="form-control" required placeholder="Ex: Maria Souza">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="venda-contato">Telefone / Contato</label>
+                        <input type="text" id="venda-contato" class="form-control" placeholder="Ex: (11) 99999-9999">
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="venda-data">Data de Entrega *</label>
+                        <input type="date" id="venda-data" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-divider">Produto / Detalhes</div>
+
+                <!-- Option to choose from standard Recipe or manually enter description -->
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="venda-tipo-produto">Tipo de Produto</label>
+                        <select id="venda-tipo-produto" class="form-control">
+                            <option value="manual">Digitar Manualmente</option>
+                            <option value="receita">Usar Receita Cadastrada</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-6" id="venda-receita-select-group" style="display:none">
+                        <label for="venda-receita-id">Selecione a Receita</label>
+                        <select id="venda-receita-id" class="form-control">
+                            <option value="">-- Selecione --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-12" id="venda-descricao-group">
+                        <label for="venda-produto">Descrição do Produto *</label>
+                        <input type="text" id="venda-produto" class="form-control" placeholder="Ex: Bolo de Chocolate com Morango (P)">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-4">
+                        <label for="venda-qtd">Quantidade *</label>
+                        <input type="number" id="venda-qtd" class="form-control" min="0.1" step="any" value="1" required>
+                    </div>
+                    <div class="form-group col-4">
+                        <label for="venda-preco">Preço Unitário (R$) *</label>
+                        <input type="number" id="venda-preco" class="form-control" min="0" step="0.01" required placeholder="0,00">
+                    </div>
+                    <div class="form-group col-4">
+                        <label for="venda-total">Total (R$)</label>
+                        <input type="text" id="venda-total" class="form-control-plaintext" readonly value="R$ 0,00">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="venda-status-pagamento">Status de Pagamento</label>
+                        <select id="venda-status-pagamento" class="form-control">
+                            <option value="pendente">Pendente</option>
+                            <option value="pago">Pago</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="venda-status-entrega">Status de Entrega</label>
+                        <select id="venda-status-entrega" class="form-control">
+                            <option value="pendente">Pendente</option>
+                            <option value="entregue">Entregue</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row modal-footer">
+                    <button type="button" class="btn btn-outline" data-modal="modal-venda">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Venda</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Adicionar/Editar Gasto -->
+    <div class="modal" id="modal-gasto">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-gasto-title">Registrar Gasto</h3>
+                <button class="modal-close" data-modal="modal-gasto">&times;</button>
+            </div>
+            <form id="form-gasto">
+                <input type="hidden" id="gasto-id">
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <label for="gasto-descricao">Descrição do Gasto *</label>
+                        <input type="text" id="gasto-descricao" class="form-control" required placeholder="Ex: Forma de bolo redonda 20cm">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="gasto-categoria">Categoria *</label>
+                        <select id="gasto-categoria" class="form-control" required>
+                            <option value="Ingredientes">Ingredientes</option>
+                            <option value="Embalagens">Embalagens</option>
+                            <option value="Utensílios/Equipamentos">Utensílios/Equipamentos</option>
+                            <option value="Energia/Água/Gás">Energia/Água/Gás</option>
+                            <option value="Marketing/Divulgação">Marketing/Divulgação</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="gasto-data">Data da Despesa *</label>
+                        <input type="date" id="gasto-data" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="gasto-valor">Valor Pago (R$) *</label>
+                        <input type="number" id="gasto-valor" class="form-control" min="0.01" step="0.01" required placeholder="0,00">
+                    </div>
+                </div>
+
+                <div class="form-row modal-footer">
+                    <button type="button" class="btn btn-outline" data-modal="modal-gasto">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Gasto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Adicionar/Editar Insumo -->
+    <div class="modal" id="modal-insumo">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-insumo-title">Novo Ingrediente (Insumo)</h3>
+                <button class="modal-close" data-modal="modal-insumo">&times;</button>
+            </div>
+            <form id="form-insumo">
+                <input type="hidden" id="insumo-id">
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <label for="insumo-nome">Nome do Ingrediente *</label>
+                        <input type="text" id="insumo-nome" class="form-control" required placeholder="Ex: Leite Condensado">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-4">
+                        <label for="insumo-unidade">Unidade Medida *</label>
+                        <select id="insumo-unidade" class="form-control" required>
+                            <option value="g">Gramas (g)</option>
+                            <option value="kg">Quilogramas (kg)</option>
+                            <option value="ml">Mililitros (ml)</option>
+                            <option value="L">Litros (L)</option>
+                            <option value="un">Unidade (un)</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-4">
+                        <label for="insumo-tamanho">Tamanho Embalagem *</label>
+                        <input type="number" id="insumo-tamanho" class="form-control" min="0.001" step="any" required placeholder="Ex: 395">
+                    </div>
+                    <div class="form-group col-4">
+                        <label for="insumo-preco">Preço Pago (R$) *</label>
+                        <input type="number" id="insumo-preco" class="form-control" min="0.01" step="0.01" required placeholder="0,00">
+                    </div>
+                </div>
+
+                <div class="form-row modal-footer">
+                    <button type="button" class="btn btn-outline" data-modal="modal-insumo">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Ingrediente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Adicionar/Editar Receita (Calculadora de Precificação) -->
+    <div class="modal modal-lg" id="modal-receita">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-receita-title">Nova Receita & Custos</h3>
+                <button class="modal-close" data-modal="modal-receita">&times;</button>
+            </div>
+            <form id="form-receita">
+                <input type="hidden" id="receita-id">
+                
+                <div class="modal-layout-split">
+                    <!-- Left Column: Basic details and ingredients list -->
+                    <div class="modal-left-column">
+                        <div class="form-row">
+                            <div class="form-group col-12">
+                                <label for="receita-nome">Nome da Receita *</label>
+                                <input type="text" id="receita-nome" class="form-control" required placeholder="Ex: Brigadeiro Tradicional de Festa">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-6">
+                                <label for="receita-rendimento">Rendimento (Porções/Qtd) *</label>
+                                <input type="number" id="receita-rendimento" class="form-control" min="1" value="1" required placeholder="Ex: 30 (brigadeiros)">
+                            </div>
+                            <div class="form-group col-6">
+                                <label for="receita-margem">Margem de Lucro (%) *</label>
+                                <input type="number" id="receita-margem" class="form-control" min="0" value="100" required placeholder="Ex: 150">
+                            </div>
+                        </div>
+
+                        <div class="form-divider">Ingredientes Usados</div>
+                        
+                        <!-- Ingredient adding inputs -->
+                        <div class="recipe-ingredient-add-bar">
+                            <select id="recipe-add-insumo-select" class="form-control">
+                                <option value="">-- Escolha um Ingrediente --</option>
+                            </select>
+                            <input type="number" id="recipe-add-insumo-qtd" class="form-control" placeholder="Qtd usada (ex: 200)" min="0.001" step="any">
+                            <button type="button" class="btn btn-secondary" id="btn-recipe-add-ingredient">
+                                <i data-lucide="plus"></i>
+                            </button>
+                        </div>
+
+                        <!-- Ingredients List -->
+                        <div class="recipe-ingredients-list-container">
+                            <ul class="recipe-ingredients-list" id="recipe-ingredients-list-ul">
+                                <!-- Dynamic selected ingredients with calculated cost -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Live costing calculations card -->
+                    <div class="modal-right-column">
+                        <div class="pricing-summary-card">
+                            <h4 class="pricing-card-title">Resumo Financeiro da Receita</h4>
+                            
+                            <div class="pricing-row">
+                                <span class="pricing-label">Custo dos Insumos:</span>
+                                <span class="pricing-value" id="calc-custo-insumos">R$ 0,00</span>
+                            </div>
+                            
+                            <!-- Adicional para embalagens/gastos adicionais na receita -->
+                            <div class="form-group">
+                                <label for="receita-custos-adicionais">Outros Custos / Embalagens (R$)</label>
+                                <input type="number" id="receita-custos-adicionais" class="form-control" min="0" step="0.01" value="0.00">
+                            </div>
+
+                            <div class="pricing-row total-row">
+                                <span class="pricing-label">Custo Total de Produção:</span>
+                                <span class="pricing-value highlight-pink" id="calc-custo-total">R$ 0,00</span>
+                            </div>
+
+                            <div class="pricing-row">
+                                <span class="pricing-label">Custo Unitário por Porção:</span>
+                                <span class="pricing-value" id="calc-custo-unitario">R$ 0,00</span>
+                            </div>
+
+                            <div class="pricing-row markup-row">
+                                <span class="pricing-label">Lucro Esperado:</span>
+                                <span class="pricing-value text-success" id="calc-lucro-estimado">R$ 0,00</span>
+                            </div>
+
+                            <div class="pricing-row final-row">
+                                <span class="pricing-label">Preço Sugerido (Total):</span>
+                                <span class="pricing-value highlight-gold" id="calc-preco-venda-sugerido">R$ 0,00</span>
+                            </div>
+
+                            <div class="pricing-row final-unit-row">
+                                <span class="pricing-label">Preço Sugerido (Unitário):</span>
+                                <span class="pricing-value" id="calc-preco-venda-unitario">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row modal-footer">
+                    <button type="button" class="btn btn-outline" data-modal="modal-receita">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Receita</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JS Scripts -->
+    <script src="calculator.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

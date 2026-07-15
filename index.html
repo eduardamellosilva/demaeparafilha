@@ -30,6 +30,15 @@
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
+    <!-- Banner: Notificação de Entregas do Dia -->
+    <div id="banner-hoje" class="banner-hoje" style="display:none;">
+        <div class="banner-content">
+            <span class="banner-icon">🔔</span>
+            <span id="banner-hoje-text"></span>
+        </div>
+        <button id="btn-fechar-banner" class="btn-banner-close" title="Fechar"><i data-lucide="x"></i></button>
+    </div>
+
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -58,6 +67,14 @@
                     <i data-lucide="calculator"></i>
                     <span>Precificação</span>
                 </a>
+                <a href="#" class="menu-item" data-tab="calendario">
+                    <i data-lucide="calendar"></i>
+                    <span>Calendário</span>
+                </a>
+                <a href="#" class="menu-item" data-tab="relatorios">
+                    <i data-lucide="bar-chart-2"></i>
+                    <span>Relatórios</span>
+                </a>
                 <a href="#" class="menu-item" data-tab="configuracoes">
                     <i data-lucide="settings"></i>
                     <span>Configurações</span>
@@ -83,6 +100,9 @@
                     </div>
                 </div>
                 <div class="header-actions">
+                    <button class="btn-dark-mode" id="btn-dark-mode" title="Alternar Modo Escuro">
+                        <i data-lucide="moon" id="dark-mode-icon"></i>
+                    </button>
                     <button class="btn btn-primary" id="btn-quick-sale">
                         <i data-lucide="plus"></i> Nova Venda
                     </button>
@@ -366,6 +386,96 @@
                     </div>
                 </div>
             </section>
+            <!-- Tab Content: Calendário -->
+            <section id="tab-calendario" class="tab-pane">
+                <div class="card calendar-card">
+                    <div class="card-header">
+                        <div class="calendar-nav">
+                            <button class="btn btn-outline btn-sm" id="btn-cal-prev" title="Mês anterior">
+                                <i data-lucide="chevron-left"></i>
+                            </button>
+                            <h4 class="calendar-month-title" id="calendar-month-title">-</h4>
+                            <button class="btn btn-outline btn-sm" id="btn-cal-next" title="Próximo mês">
+                                <i data-lucide="chevron-right"></i>
+                            </button>
+                        </div>
+                        <p class="card-subtitle">Clique em um dia marcado para ver os pedidos</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="calendar-weekdays">
+                            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+                        </div>
+                        <div class="calendar-grid" id="calendar-grid"></div>
+                    </div>
+                </div>
+                <div class="card calendar-orders-card" id="calendar-day-orders-panel" style="display:none;">
+                    <div class="card-header">
+                        <h4 class="card-title" id="calendar-selected-day-title">Pedidos do Dia</h4>
+                    </div>
+                    <div class="card-body" id="calendar-day-orders-list"></div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Relatórios -->
+            <section id="tab-relatorios" class="tab-pane">
+                <div class="relatorios-grid">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h4 class="card-title">Evolução do Lucro</h4>
+                            <p class="card-subtitle">Lucro líquido nos últimos 6 meses</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="lucroChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Produtos Mais Vendidos</h4>
+                            <p class="card-subtitle">Por faturamento total (Top 5)</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container-sm">
+                                <canvas id="produtosChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">🏆 Top Clientes</h4>
+                            <p class="card-subtitle">Maiores compradores de todos os tempos</p>
+                        </div>
+                        <div class="card-body" id="top-clientes-body">
+                            <div class="empty-state"><p>Sem dados de vendas ainda.</p></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Desempenho por Produto</h4>
+                            <p class="card-subtitle">Ranking de faturamento por item</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Produto</th>
+                                            <th>Qtd</th>
+                                            <th>Faturamento</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="produtos-relatorio-body">
+                                        <tr><td colspan="4" class="text-center text-muted" style="padding:2rem">Sem dados de vendas.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 
@@ -450,6 +560,25 @@
                             <option value="entregue">Entregue</option>
                             <option value="cancelado">Cancelado</option>
                         </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <label for="venda-forma-pagamento">Forma de Pagamento</label>
+                        <select id="venda-forma-pagamento" class="form-control">
+                            <option value="pix">💚 Pix</option>
+                            <option value="dinheiro">💵 Dinheiro</option>
+                            <option value="cartao-credito">💳 Cartão de Crédito</option>
+                            <option value="cartao-debito">💳 Cartão de Débito</option>
+                            <option value="transferencia">🏦 Transferência Bancária</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <label for="venda-observacoes">Observações / Notas</label>
+                        <textarea id="venda-observacoes" class="form-control" rows="2" placeholder="Ex: Sem glúten, caixa especial, entregar às 14h..."></textarea>
                     </div>
                 </div>
 

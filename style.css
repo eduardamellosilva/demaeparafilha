@@ -1294,3 +1294,472 @@ label {
     }
 }
 
+
+/* ==========================================
+   DARK MODE
+   ========================================== */
+body.dark-mode {
+    --bg-app: #1A1218;
+    --bg-sidebar: #201519;
+    --surface: #261B22;
+    --text-main: #F0E8E9;
+    --text-muted: #A89395;
+    --text-light: #8A7578;
+    --border-color: #3D2A2E;
+    --primary-light: #3D1E24;
+    --success-light: #0D3021;
+    --danger-light: #3D0E0A;
+    --shadow-soft: 0 10px 30px rgba(0,0,0,0.3);
+    --shadow-card: 0 4px 15px rgba(0,0,0,0.2);
+    --shadow-hover: 0 12px 25px rgba(0,0,0,0.35);
+}
+
+body.dark-mode .sidebar {
+    border-right-color: var(--border-color);
+}
+
+body.dark-mode .menu-item:hover,
+body.dark-mode .menu-item.active {
+    background: var(--primary-light);
+}
+
+body.dark-mode .card {
+    background: var(--surface);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .table th {
+    background: var(--bg-app);
+    border-color: var(--border-color);
+    color: var(--text-muted);
+}
+
+body.dark-mode .table td {
+    border-color: var(--border-color);
+}
+
+body.dark-mode .table tr:hover td {
+    background: var(--primary-light);
+}
+
+body.dark-mode .form-control,
+body.dark-mode select.form-control,
+body.dark-mode textarea.form-control {
+    background: var(--bg-app);
+    border-color: var(--border-color);
+    color: var(--text-main);
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode select.form-control:focus,
+body.dark-mode textarea.form-control:focus {
+    background: var(--surface);
+}
+
+body.dark-mode .modal-content {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+}
+
+body.dark-mode .modal-header {
+    border-bottom-color: var(--border-color);
+}
+
+body.dark-mode .search-box {
+    background: var(--surface);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .search-box input {
+    background: transparent;
+    color: var(--text-main);
+}
+
+body.dark-mode .pricing-summary-card {
+    background: var(--bg-app);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .calendar-day {
+    background: var(--surface);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .calendar-day-today {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+body.dark-mode .calendar-day-empty {
+    background: transparent;
+    border-color: transparent;
+}
+
+/* Dark mode toggle button */
+.btn-dark-mode {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all var(--transition-speed);
+    flex-shrink: 0;
+}
+
+.btn-dark-mode:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: rotate(12deg);
+}
+
+/* ==========================================
+   NOTIFICATION BANNER (ENTREGAS DO DIA)
+   ========================================== */
+.banner-hoje {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background: linear-gradient(135deg, var(--primary) 0%, #E3B448 100%);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 2px 12px rgba(183, 110, 121, 0.4);
+    animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+}
+
+.banner-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.banner-icon {
+    font-size: 1.2rem;
+    animation: ring 1s ease 0.5s;
+}
+
+@keyframes ring {
+    0%,100% { transform: rotate(0); }
+    20%      { transform: rotate(15deg); }
+    40%      { transform: rotate(-12deg); }
+    60%      { transform: rotate(8deg); }
+    80%      { transform: rotate(-5deg); }
+}
+
+.btn-banner-close {
+    background: rgba(255,255,255,0.25);
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    flex-shrink: 0;
+    transition: background var(--transition-speed);
+}
+
+.btn-banner-close:hover {
+    background: rgba(255,255,255,0.45);
+}
+
+/* Offset main content when banner is visible */
+body.has-banner .top-navbar,
+body.has-banner .sidebar,
+body.has-banner .main-content {
+    padding-top: calc(var(--banner-h, 48px));
+}
+
+/* ==========================================
+   CALENDAR
+   ========================================== */
+.calendar-card {
+    margin-bottom: 1.5rem;
+}
+
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.calendar-month-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    min-width: 200px;
+    text-align: center;
+    color: var(--primary);
+}
+
+.btn-sm {
+    padding: 0.3rem 0.55rem;
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.calendar-weekdays span {
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 0.4rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendar-day {
+    background: var(--bg-app);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    min-height: 68px;
+    padding: 0.4rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: all var(--transition-speed);
+    position: relative;
+}
+
+.calendar-day-empty {
+    background: transparent !important;
+    border-color: transparent !important;
+    min-height: 68px;
+}
+
+.calendar-day-today {
+    border-color: var(--primary) !important;
+    background: var(--primary-light) !important;
+}
+
+.calendar-day-today .calendar-day-number {
+    color: var(--primary);
+    font-weight: 800;
+}
+
+.calendar-day-has-orders {
+    cursor: pointer;
+}
+
+.calendar-day-has-orders:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+
+.calendar-day.selected {
+    border-color: var(--primary) !important;
+    background: var(--primary-light) !important;
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+.calendar-day-number {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-main);
+    line-height: 1;
+}
+
+.calendar-dots {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-wrap: wrap;
+}
+
+.calendar-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.dot-pendente  { background: var(--secondary); }
+.dot-atrasado  { background: var(--danger); }
+.dot-entregue  { background: var(--success); }
+
+.calendar-count {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-light);
+    border-radius: 10px;
+    padding: 0 4px;
+}
+
+.calendar-orders-card {
+    animation: fadeIn 0.3s ease;
+}
+
+.calendar-order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--border-color);
+    gap: 1rem;
+}
+
+.calendar-order-item:last-child {
+    border-bottom: none;
+}
+
+/* ==========================================
+   REPORTS
+   ========================================== */
+.relatorios-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.chart-container-sm {
+    height: 220px;
+    position: relative;
+}
+
+.top-cliente-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--border-color);
+    transition: background var(--transition-speed);
+}
+
+.top-cliente-item:last-child {
+    border-bottom: none;
+}
+
+.top-cliente-rank {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.top-cliente-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 2px;
+}
+
+.top-cliente-info strong {
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+.top-cliente-valor {
+    font-size: 1rem;
+    color: var(--primary);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+    .relatorios-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================
+   FORMA DE PAGAMENTO — BADGES
+   ========================================== */
+.badge-pix            { background: #00b37e22; color: #00906a; }
+.badge-dinheiro       { background: #2ECC7122; color: #1e8449; }
+.badge-cartao-credito { background: #B76E7922; color: #8d3d4c; }
+.badge-cartao-debito  { background: #3498DB22; color: #1a6fa0; }
+.badge-transferencia  { background: #9B59B622; color: #6c3483; }
+
+/* ==========================================
+   OBSERVAÇÕES — TOOLTIP ICON
+   ========================================== */
+.obs-icon {
+    position: relative;
+    cursor: help;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    vertical-align: middle;
+    transition: color var(--transition-speed);
+}
+
+.obs-icon:hover {
+    color: var(--primary);
+}
+
+.obs-icon svg {
+    width: 15px;
+    height: 15px;
+}
+
+.obs-icon:hover::after {
+    content: attr(data-obs);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-main);
+    color: var(--surface, #fff);
+    padding: 0.45rem 0.65rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.78rem;
+    white-space: pre-wrap;
+    max-width: 220px;
+    z-index: 50;
+    box-shadow: var(--shadow-card);
+    line-height: 1.4;
+    pointer-events: none;
+    font-weight: 400;
+}
+
+/* Textarea */
+textarea.form-control {
+    resize: vertical;
+    min-height: 60px;
+    padding-top: 0.6rem;
+}
+
+/* ==========================================
+   GENERAL ANIMATIONS
+   ========================================== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+

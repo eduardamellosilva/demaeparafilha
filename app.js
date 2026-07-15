@@ -14,6 +14,13 @@ let state = {
 // Referência ao Gráfico Financeiro
 let financeChartInstance = null;
 
+// Referência aos Gráficos de Relatório
+let lucroChartInstance = null;
+let produtosChartInstance = null;
+
+// Estado do Calendário
+let calendarCurrentDate = new Date();
+
 // Inicialização do App
 document.addEventListener('DOMContentLoaded', () => {
     loadState();
@@ -71,11 +78,20 @@ function initApp() {
     // Configura eventos de configurações e backup
     initSettingsEvents();
     
+    // Inicializa dark mode
+    initDarkMode();
+    
+    // Inicializa calendário (eventos de navegação)
+    initCalendar();
+    
     // Renderiza dados iniciais
     renderAll();
     
     // Inicializa/Atualiza o gráfico do Dashboard
     updateDashboardChart();
+    
+    // Verifica entregas do dia (após renderAll para ter dados carregados)
+    checkEntregasHoje();
 }
 
 function initHamburgerMenu() {
@@ -146,11 +162,13 @@ function initTabs() {
             
             // Atualiza título do cabeçalho
             const titleMap = {
-                'dashboard': { title: 'Painel Geral', sub: 'Bem-vindo(a) de volta! Veja como está sua confeitaria hoje.' },
-                'vendas': { title: 'Minhas Vendas', sub: 'Gerencie suas encomendas, status de entrega e pagamentos.' },
-                'gastos': { title: 'Meus Gastos', sub: 'Monitore suas despesas com insumos, utilidades e embalagens.' },
-                'precificacao': { title: 'Precificação e Receitas', sub: 'Cadastre ingredientes e calcule o custo exato das receitas.' },
-                'configuracoes': { title: 'Configurações', sub: 'Gerenciamento de banco de dados local e backup.' }
+                'dashboard':     { title: 'Painel Geral',              sub: 'Bem-vindo(a) de volta! Veja como está sua confeitaria hoje.' },
+                'vendas':        { title: 'Minhas Vendas',             sub: 'Gerencie suas encomendas, status de entrega e pagamentos.' },
+                'gastos':        { title: 'Meus Gastos',               sub: 'Monitore suas despesas com insumos, utilidades e embalagens.' },
+                'precificacao':  { title: 'Precificação e Receitas',   sub: 'Cadastre ingredientes e calcule o custo exato das receitas.' },
+                'calendario':    { title: 'Calendário de Encomendas',  sub: 'Visualize e gerencie suas entregas em formato de calendário.' },
+                'relatorios':    { title: 'Relatórios de Desempenho',  sub: 'Gráficos e análises do desempenho financeiro da sua confeitaria.' },
+                'configuracoes': { title: 'Configurações',             sub: 'Gerenciamento de banco de dados local e backup.' }
             };
             
             if (titleMap[tabId]) {
@@ -161,6 +179,9 @@ function initTabs() {
             // Re-renderizações específicas se necessário
             if (tabId === 'dashboard') {
                 updateDashboardChart();
+            }
+            if (tabId === 'relatorios') {
+                renderRelatorios();
             }
         });
     });
@@ -230,6 +251,8 @@ function renderAll() {
     renderGastos();
     renderInsumos();
     renderReceitas();
+    renderCalendario();
+    renderRelatorios();
     
     // Atualiza os dropdowns dinâmicos em formulários
     populateDropdowns();
@@ -443,12 +466,22 @@ function renderVendas() {
         
         const contatoExibicao = v.contato ? `<br><small class="text-light">${v.contato}</small>` : '';
         
+        // Forma de pagamento badge
+        const formaPagHtml = v.formaPagamento
+            ? `<br><small><span class="badge badge-${v.formaPagamento}">${getFormaPagLabel(v.formaPagamento)}</span></small>`
+            : '';
+        
+        // Observações icon
+        const obsHtml = v.observacoes
+            ? `<span class="obs-icon" data-obs="${v.observacoes.replace(/"/g, '&quot;').replace(/\n/g, '\n')}"><i data-lucide="message-square"></i></span>`
+            : '';
+        
         row.innerHTML = `
             <td><strong>${v.cliente}</strong>${contatoExibicao}</td>
-            <td>${v.produto} <small class="text-muted">(x${v.quantidade})</small></td>
+            <td>${v.produto} <small class="text-muted">(x${v.quantidade})</small>${obsHtml}</td>
             <td><strong>${formatCurrency(v.total)}</strong></td>
             <td>${dataFormatada}</td>
-            <td>${badgePag}</td>
+            <td>${badgePag}${formaPagHtml}</td>
             <td>${badgeEnt}</td>
             <td class="actions-cell">
                 <button class="btn-action" onclick="editVenda('${v.id}')" title="Editar"><i data-lucide="edit-3"></i></button>
@@ -692,6 +725,8 @@ function initFormEvents() {
         const total = quantidade * precoUnitario;
         const statusPagamento = document.getElementById('venda-status-pagamento').value;
         const statusEntrega = document.getElementById('venda-status-entrega').value;
+        const formaPagamento = document.getElementById('venda-forma-pagamento').value;
+        const observacoes = document.getElementById('venda-observacoes').value;
         
         const vendaData = {
             id: id || generateUUID(),
@@ -703,7 +738,9 @@ function initFormEvents() {
             precoUnitario,
             total,
             statusPagamento,
-            statusEntrega
+            statusEntrega,
+            formaPagamento,
+            observacoes
         };
         
         if (id) {
@@ -957,6 +994,8 @@ window.editVenda = function(id) {
     
     document.getElementById('venda-status-pagamento').value = v.statusPagamento;
     document.getElementById('venda-status-entrega').value = v.statusEntrega;
+    document.getElementById('venda-forma-pagamento').value = v.formaPagamento || 'pix';
+    document.getElementById('venda-observacoes').value = v.observacoes || '';
     
     openModal('modal-venda');
 };
@@ -1065,6 +1104,8 @@ function openModalVenda() {
     document.getElementById('venda-receita-select-group').style.display = 'none';
     document.getElementById('venda-receita-id').removeAttribute('required');
     document.getElementById('venda-total').value = 'R$ 0,00';
+    document.getElementById('venda-forma-pagamento').value = 'pix';
+    document.getElementById('venda-observacoes').value = '';
     
     openModal('modal-venda');
 }
@@ -1243,61 +1284,71 @@ function seedSampleData() {
             id: generateUUID(),
             cliente: "Maria Oliveira",
             contato: "(11) 98888-1111",
-            data: obterDataMes(1), // Ontem
+            data: obterDataMes(1),
             produto: "Cento de Brigadeiros Gourmet",
             quantidade: 1,
             precoUnitario: 90.00,
             total: 90.00,
             statusPagamento: "pago",
-            statusEntrega: "entregue"
+            statusEntrega: "entregue",
+            formaPagamento: "pix",
+            observacoes: "Entregar em caixa personalizada."
         },
         {
             id: generateUUID(),
             cliente: "Paula Souza",
             contato: "(11) 97777-2222",
-            data: obterDataMes(0), // Hoje
+            data: obterDataMes(0),
             produto: "Bolo de Cenoura com Calda de Chocolate (M)",
             quantidade: 2,
             precoUnitario: 45.00,
             total: 90.00,
             statusPagamento: "pendente",
-            statusEntrega: "pendente"
+            statusEntrega: "pendente",
+            formaPagamento: "dinheiro",
+            observacoes: ""
         },
         {
             id: generateUUID(),
             cliente: "Carlos Ferreira",
             contato: "(11) 96666-3333",
-            data: obterDataMes(-2), // Daqui a 2 dias (próximas entregas)
+            data: obterDataMes(-2),
             produto: "Cento de Brigadeiros Gourmet",
             quantidade: 2,
             precoUnitario: 90.00,
             total: 180.00,
             statusPagamento: "pago",
-            statusEntrega: "pendente"
+            statusEntrega: "pendente",
+            formaPagamento: "cartao-credito",
+            observacoes: "Sem amendoim (alergia)."
         },
         {
             id: generateUUID(),
             cliente: "Juliana Santos",
             contato: "",
-            data: obterDataMesDiferente(1, 10), // Mês passado
+            data: obterDataMesDiferente(1, 10),
             produto: "Cento de Brigadeiros Gourmet",
             quantidade: 3,
             precoUnitario: 85.00,
             total: 255.00,
             statusPagamento: "pago",
-            statusEntrega: "entregue"
+            statusEntrega: "entregue",
+            formaPagamento: "pix",
+            observacoes: ""
         },
         {
             id: generateUUID(),
             cliente: "Renato Lima",
             contato: "",
-            data: obterDataMesDiferente(2, 15), // 2 meses atrás
+            data: obterDataMesDiferente(2, 15),
             produto: "Bolo de Cenoura com Calda de Chocolate (M)",
             quantidade: 4,
             precoUnitario: 40.00,
             total: 160.00,
             statusPagamento: "pago",
-            statusEntrega: "entregue"
+            statusEntrega: "entregue",
+            formaPagamento: "transferencia",
+            observacoes: ""
         }
     ];
     
@@ -1510,14 +1561,12 @@ window.enviarMensagemWhatsApp = function(id) {
         return;
     }
     
-    // Remove parênteses, traços, espaços e caracteres não numéricos
     let telefone = v.contato.replace(/\D/g, '');
     if (!telefone) {
         alert('O número de telefone cadastrado é inválido! Use apenas números com DDD.');
         return;
     }
     
-    // Se não tiver o DDI do Brasil (55), adiciona se tiver 10 ou 11 dígitos
     if (telefone.length === 10 || telefone.length === 11) {
         telefone = '55' + telefone;
     }
@@ -1525,9 +1574,375 @@ window.enviarMensagemWhatsApp = function(id) {
     const dataFormatada = formatDate(v.data);
     const totalFormatado = formatCurrency(v.total);
     const statusPag = v.statusPagamento === 'pago' ? 'já pago' : 'pagamento pendente';
+    const obsLine = v.observacoes ? `\n\u2709️ *Observações:* ${v.observacoes}` : '';
     
-    const mensagem = `Olá, *${v.cliente}*! Tudo bem? 🍰 Aqui é da confeitaria.\n\nPassando para confirmar os detalhes do seu pedido:\n📦 *Encomenda:* ${v.quantidade}x ${v.produto}\n📅 *Data de Entrega:* ${dataFormatada}\n💰 *Valor Total:* ${totalFormatado} (${statusPag})\n\nEstá tudo confirmado para a data? Aguardo seu retorno!`;
+    const mensagem = `Olá, *${v.cliente}*! Tudo bem? 🍰 Aqui é da confeitaria.\n\nPassando para confirmar os detalhes do seu pedido:\n📦 *Encomenda:* ${v.quantidade}x ${v.produto}\n📅 *Data de Entrega:* ${dataFormatada}\n💰 *Valor Total:* ${totalFormatado} (${statusPag})${obsLine}\n\nEstá tudo confirmado para a data? Aguardo seu retorno!`;
     
     const url = `https://api.whatsapp.com/send?phone=${telefone}&text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
 };
+
+
+/**
+ * --- DARK MODE ---
+ */
+function initDarkMode() {
+    const btn  = document.getElementById('btn-dark-mode');
+    const icon = document.getElementById('dark-mode-icon');
+    
+    // Restaura preferência salva
+    if (localStorage.getItem('dark_mode') === 'true') {
+        document.body.classList.add('dark-mode');
+        icon.setAttribute('data-lucide', 'sun');
+        lucide.createIcons();
+    }
+    
+    btn.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('dark_mode', isDark);
+        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        lucide.createIcons();
+    });
+}
+
+/**
+ * --- NOTIFICAÇÃO DE ENTREGAS DO DIA ---
+ */
+function checkEntregasHoje() {
+    const hoje = new Date().toISOString().split('T')[0];
+    const entregasHoje = state.vendas.filter(v => v.data === hoje && v.statusEntrega === 'pendente');
+    
+    if (entregasHoje.length === 0) return;
+    
+    const banner = document.getElementById('banner-hoje');
+    const text   = document.getElementById('banner-hoje-text');
+    
+    const nomes = entregasHoje.slice(0, 3).map(v => v.cliente).join(', ');
+    const extra = entregasHoje.length > 3 ? ` e mais ${entregasHoje.length - 3}` : '';
+    text.textContent = `Você tem ${entregasHoje.length} entrega(s) hoje: ${nomes}${extra}`;
+    
+    banner.style.display = 'flex';
+    document.body.classList.add('has-banner');
+    lucide.createIcons();
+    
+    document.getElementById('btn-fechar-banner').addEventListener('click', () => {
+        banner.style.display = 'none';
+        document.body.classList.remove('has-banner');
+    });
+}
+
+/**
+ * --- CALENDÁRIO DE ENCOMENDAS ---
+ */
+function initCalendar() {
+    document.getElementById('btn-cal-prev').addEventListener('click', () => {
+        calendarCurrentDate.setMonth(calendarCurrentDate.getMonth() - 1);
+        renderCalendario();
+    });
+    document.getElementById('btn-cal-next').addEventListener('click', () => {
+        calendarCurrentDate.setMonth(calendarCurrentDate.getMonth() + 1);
+        renderCalendario();
+    });
+}
+
+function renderCalendario() {
+    const titleEl = document.getElementById('calendar-month-title');
+    if (!titleEl) return;
+    
+    const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    
+    const ano = calendarCurrentDate.getFullYear();
+    const mes = calendarCurrentDate.getMonth();
+    
+    titleEl.textContent = `${mesesNomes[mes]} de ${ano}`;
+    
+    const grid = document.getElementById('calendar-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    // Esconde painel de pedidos do dia
+    const ordersPanel = document.getElementById('calendar-day-orders-panel');
+    if (ordersPanel) ordersPanel.style.display = 'none';
+    
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const hojeStr = hoje.toISOString().split('T')[0];
+    
+    const primeiroDia = new Date(ano, mes, 1).getDay(); // 0=Dom
+    const totalDias   = new Date(ano, mes + 1, 0).getDate();
+    
+    // Mapeia pedidos por dia
+    const ordersPerDay = {};
+    state.vendas.forEach(v => {
+        if (!v.data) return;
+        const d = new Date(v.data + 'T00:00:00');
+        if (d.getFullYear() === ano && d.getMonth() === mes) {
+            const dia = d.getDate();
+            if (!ordersPerDay[dia]) ordersPerDay[dia] = [];
+            ordersPerDay[dia].push(v);
+        }
+    });
+    
+    // Células vazias antes do primeiro dia
+    for (let i = 0; i < primeiroDia; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day calendar-day-empty';
+        grid.appendChild(cell);
+    }
+    
+    // Células dos dias
+    for (let dia = 1; dia <= totalDias; dia++) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day';
+        
+        const dateStr = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        
+        if (dateStr === hojeStr) cell.classList.add('calendar-day-today');
+        
+        const orders = ordersPerDay[dia] || [];
+        
+        let dotsHtml = '';
+        if (orders.length > 0) {
+            cell.classList.add('calendar-day-has-orders');
+            
+            const dtCell = new Date(dateStr + 'T00:00:00');
+            const hasAtrasado = orders.some(v => v.statusEntrega === 'pendente' && dtCell < hoje);
+            const hasPendente = orders.some(v => v.statusEntrega === 'pendente');
+            
+            let dotClass = 'dot-entregue';
+            if (hasAtrasado)      dotClass = 'dot-atrasado';
+            else if (hasPendente) dotClass = 'dot-pendente';
+            
+            const countHtml = orders.length > 1 ? `<span class="calendar-count">${orders.length}</span>` : '';
+            dotsHtml = `<div class="calendar-dots"><span class="calendar-dot ${dotClass}"></span>${countHtml}</div>`;
+            
+            const capturedDia   = dia;
+            const capturedDate  = dateStr;
+            const capturedOrders = orders;
+            cell.addEventListener('click', () => {
+                showCalendarDayOrders(capturedDia, capturedDate, capturedOrders);
+                document.querySelectorAll('.calendar-day.selected').forEach(c => c.classList.remove('selected'));
+                cell.classList.add('selected');
+            });
+        }
+        
+        cell.innerHTML = `<span class="calendar-day-number">${dia}</span>${dotsHtml}`;
+        grid.appendChild(cell);
+    }
+}
+
+function showCalendarDayOrders(dia, dateStr, orders) {
+    const panel = document.getElementById('calendar-day-orders-panel');
+    const title = document.getElementById('calendar-selected-day-title');
+    const list  = document.getElementById('calendar-day-orders-list');
+    if (!panel || !title || !list) return;
+    
+    const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const d = new Date(dateStr + 'T00:00:00');
+    title.textContent = `${dia} de ${mesesNomes[d.getMonth()]} — ${orders.length} encomenda(s)`;
+    
+    list.innerHTML = '';
+    orders.forEach(v => {
+        const statusClass = v.statusEntrega === 'entregue' ? 'badge-success' : 'badge-warning';
+        const statusText  = v.statusEntrega === 'entregue' ? 'Entregue' : 'Pendente';
+        const div = document.createElement('div');
+        div.className = 'calendar-order-item';
+        div.innerHTML = `
+            <div>
+                <strong>${v.cliente}</strong>
+                ${v.contato ? `<br><small class="text-muted">${v.contato}</small>` : ''}
+                <br><span class="text-muted">${v.quantidade}x ${v.produto}</span>
+                ${v.observacoes ? `<br><small class="text-light">📝 ${v.observacoes}</small>` : ''}
+            </div>
+            <div style="text-align:right; flex-shrink:0">
+                <strong>${formatCurrency(v.total)}</strong>
+                <br><span class="badge ${statusClass}">${statusText}</span>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+    
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/**
+ * --- RELATÓRIOS DE DESEMPENHO ---
+ */
+function renderRelatorios() {
+    const tab = document.getElementById('tab-relatorios');
+    if (!tab || !tab.classList.contains('active')) return;
+    
+    const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const hoje = new Date();
+    const labels = [];
+    const dadosLucro = [];
+    
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        labels.push(`${mesesNomes[d.getMonth()]}/${d.getFullYear().toString().substr(-2)}`);
+        
+        const totalVendas = state.vendas
+            .filter(v => {
+                const dv = new Date(v.data);
+                return dv.getFullYear() === d.getFullYear() && dv.getMonth() === d.getMonth() && v.statusEntrega !== 'cancelado';
+            })
+            .reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0);
+            
+        const totalGastos = state.gastos
+            .filter(g => {
+                const dg = new Date(g.data);
+                return dg.getFullYear() === d.getFullYear() && dg.getMonth() === d.getMonth();
+            })
+            .reduce((acc, curr) => acc + (parseFloat(curr.valor) || 0), 0);
+            
+        dadosLucro.push(totalVendas - totalGastos);
+    }
+    
+    // Gráfico de Linha - Evolução do Lucro
+    const ctxLucro = document.getElementById('lucroChart');
+    if (ctxLucro) {
+        if (lucroChartInstance) lucroChartInstance.destroy();
+        lucroChartInstance = new Chart(ctxLucro.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Lucro Líquido (R$)',
+                    data: dadosLucro,
+                    borderColor: '#B76E79',
+                    backgroundColor: 'rgba(183, 110, 121, 0.12)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#B76E79',
+                    pointBorderColor: '#fff',
+                    pointRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        ticks: { callback: v => 'R$ ' + v.toFixed(0), font: { family: 'Outfit' } },
+                        grid: { color: 'rgba(183,110,121,0.06)' }
+                    },
+                    x: {
+                        ticks: { font: { family: 'Outfit' } },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Dados de produtos
+    const produtosMap = {};
+    state.vendas.filter(v => v.statusEntrega !== 'cancelado').forEach(v => {
+        const nome = v.produto || 'Sem nome';
+        if (!produtosMap[nome]) produtosMap[nome] = { qtd: 0, faturamento: 0 };
+        produtosMap[nome].qtd          += parseFloat(v.quantidade) || 0;
+        produtosMap[nome].faturamento  += parseFloat(v.total)      || 0;
+    });
+    
+    const produtosSorted = Object.entries(produtosMap).sort((a, b) => b[1].faturamento - a[1].faturamento);
+    const top5 = produtosSorted.slice(0, 5);
+    const cores = ['#B76E79','#E3B448','#5DADE2','#58D68D','#AF7AC5'];
+    
+    // Gráfico de Rosca - Produtos
+    const ctxProd = document.getElementById('produtosChart');
+    if (ctxProd) {
+        if (produtosChartInstance) produtosChartInstance.destroy();
+        produtosChartInstance = new Chart(ctxProd.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: top5.map(([nome]) => nome.length > 22 ? nome.substring(0, 22) + '…' : nome),
+                datasets: [{
+                    data: top5.map(([, d]) => d.faturamento),
+                    backgroundColor: cores,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { family: 'Outfit', size: 11 }, boxWidth: 14, padding: 10 } },
+                    tooltip: { callbacks: { label: ctx => ` ${formatCurrency(ctx.raw)}` } }
+                }
+            }
+        });
+    }
+    
+    // Tabela de produtos
+    const tableBody = document.getElementById('produtos-relatorio-body');
+    if (tableBody) {
+        if (produtosSorted.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding:2rem">Sem dados de vendas.</td></tr>';
+        } else {
+            tableBody.innerHTML = '';
+            produtosSorted.forEach(([nome, data], i) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong style="color:var(--primary)">#${i + 1}</strong></td>
+                    <td>${nome}</td>
+                    <td>${data.qtd.toFixed(0)}</td>
+                    <td><strong>${formatCurrency(data.faturamento)}</strong></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+    }
+    
+    // Top Clientes
+    const clientesMap = {};
+    state.vendas.filter(v => v.statusEntrega !== 'cancelado').forEach(v => {
+        if (!clientesMap[v.cliente]) clientesMap[v.cliente] = { total: 0, pedidos: 0 };
+        clientesMap[v.cliente].total   += parseFloat(v.total) || 0;
+        clientesMap[v.cliente].pedidos += 1;
+    });
+    
+    const clientesSorted = Object.entries(clientesMap).sort((a, b) => b[1].total - a[1].total);
+    const top3 = clientesSorted.slice(0, 3);
+    const medalhas = ['🥇','🥈','🥉'];
+    
+    const topClientesBody = document.getElementById('top-clientes-body');
+    if (topClientesBody) {
+        if (top3.length === 0) {
+            topClientesBody.innerHTML = '<div class="empty-state"><p>Sem dados de vendas ainda.</p></div>';
+        } else {
+            topClientesBody.innerHTML = '';
+            top3.forEach(([nome, data], i) => {
+                const div = document.createElement('div');
+                div.className = 'top-cliente-item';
+                div.innerHTML = `
+                    <div class="top-cliente-rank">${medalhas[i]}</div>
+                    <div class="top-cliente-info">
+                        <strong>${nome}</strong>
+                        <small class="text-muted">${data.pedidos} pedido(s)</small>
+                    </div>
+                    <div class="top-cliente-valor">${formatCurrency(data.total)}</div>
+                `;
+                topClientesBody.appendChild(div);
+            });
+        }
+    }
+}
+
+/**
+ * --- HELPER: LABEL DA FORMA DE PAGAMENTO ---
+ */
+function getFormaPagLabel(forma) {
+    const map = {
+        'pix':            'Pix',
+        'dinheiro':       'Dinheiro',
+        'cartao-credito': 'Crédito',
+        'cartao-debito':  'Débito',
+        'transferencia':  'Transferência'
+    };
+    return map[forma] || forma;
+}

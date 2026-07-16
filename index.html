@@ -13,6 +13,23 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    
+    <!-- Configuração do Firebase -->
+    <script src="firebase-config.js"></script>
+
+    <!-- Verifica Sessão Assincronamente -->
+    <script>
+        // Redireciona caso não haja sessão local válida. 
+        // A validação final e segura acontece no app.js via Firebase
+        if (!localStorage.getItem('firebase_user_uid')) {
+            window.location.href = 'login.html';
+        }
+    </script>
 </head>
 <body>
     <!-- Top Navbar for Mobile -->
@@ -77,6 +94,11 @@
                 <a href="#" class="menu-item" data-tab="configuracoes">
                     <i data-lucide="settings"></i>
                     <span>Configurações</span>
+                </a>
+                <div style="flex-grow: 1;"></div>
+                <a href="#" class="menu-item" id="btn-logout" style="color: var(--danger); margin-top: 1rem;">
+                    <i data-lucide="log-out"></i>
+                    <span>Sair</span>
                 </a>
             </nav>
             
@@ -196,9 +218,6 @@
                             <option value="pendente-entrega">Entrega Pendente</option>
                             <option value="entregue">Entregue</option>
                         </select>
-                        <button class="btn btn-primary" id="btn-add-sale">
-                            <i data-lucide="plus"></i> Novo Pedido
-                        </button>
                     </div>
                 </div>
 

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - De Mãe para Filha</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    
+    <!-- Configuração do Firebase -->
+    <script src="firebase-config.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+    <!-- Inline styles specific to login to avoid bloating style.css too much -->
+    <style>
+        .login-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-color) 0%, #fae6ea 100%);
+            padding: 1rem;
+        }
+        
+        .dark-mode .login-page {
+            background: linear-gradient(135deg, var(--bg-color) 0%, #2a1a1f 100%);
+        }
+
+        .login-container {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(183, 110, 121, 0.15);
+            width: 100%;
+            max-width: 450px;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+        
+        .dark-mode .login-container {
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo {
+            max-width: 150px;
+            margin-bottom: 1rem;
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .login-subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .login-form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .login-form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .login-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .login-input-wrapper i {
+            position: absolute;
+            left: 1rem;
+            color: var(--text-muted);
+            width: 18px;
+            height: 18px;
+        }
+
+        .login-input-wrapper input {
+            width: 100%;
+            padding: 0.85rem 1rem 0.85rem 2.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .login-input-wrapper input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(183, 110, 121, 0.1);
+            outline: none;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.85rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .login-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(183, 110, 121, 0.3);
+        }
+
+        .login-footer {
+            margin-top: 1.5rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .login-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            background: none;
+            border: none;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+        }
+
+        .login-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        /* Toggle forms */
+        #register-section {
+            display: none;
+        }
+
+        .error-message {
+            color: var(--danger);
+            background-color: rgba(220, 53, 69, 0.1);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .success-message {
+            color: var(--success);
+            background-color: rgba(40, 167, 69, 0.1);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body class="login-page">
+
+    <div class="login-container">
+        <!-- LOGIN SECTION -->
+        <div id="login-section">
+            <div class="login-header">
+                <img src="logo.png" alt="De Mãe para Filha" class="login-logo">
+                <h1 class="login-title">Bem-vindo(a) de volta</h1>
+                <p class="login-subtitle">Acesse sua conta para gerenciar a confeitaria</p>
+            </div>
+
+            <div id="login-error" class="error-message">
+                <i data-lucide="alert-circle"></i>
+                <span id="login-error-text">Usuário ou senha incorretos.</span>
+            </div>
+
+            <form id="form-login">
+                <div class="login-form-group">
+                    <label for="login-username">Nome de Usuário</label>
+                    <div class="login-input-wrapper">
+                        <i data-lucide="user"></i>
+                        <input type="text" id="login-username" placeholder="Digite seu usuário" required>
+                    </div>
+                </div>
+
+                <div class="login-form-group">
+                    <label for="login-password">Senha</label>
+                    <div class="login-input-wrapper">
+                        <i data-lucide="lock"></i>
+                        <input type="password" id="login-password" placeholder="Digite sua senha" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <i data-lucide="log-in"></i> Entrar no Sistema
+                </button>
+            </form>
+
+            <div class="login-footer">
+                Não tem uma conta? <button type="button" class="login-link" id="link-to-register">Criar uma agora</button>
+            </div>
+        </div>
+
+        <!-- REGISTER SECTION -->
+        <div id="register-section">
+            <div class="login-header">
+                <img src="logo.png" alt="De Mãe para Filha" class="login-logo">
+                <h1 class="login-title">Criar Nova Conta</h1>
+                <p class="login-subtitle">Cadastre-se para começar a usar o sistema</p>
+            </div>
+
+            <div id="register-error" class="error-message">
+                <i data-lucide="alert-circle"></i>
+                <span id="register-error-text">Erro ao criar conta.</span>
+            </div>
+            
+            <div id="register-success" class="success-message">
+                <i data-lucide="check-circle"></i>
+                <span>Conta criada com sucesso! Você pode fazer login agora.</span>
+            </div>
+
+            <form id="form-register">
+                <div class="login-form-group">
+                    <label for="register-name">Nome Completo</label>
+                    <div class="login-input-wrapper">
+                        <i data-lucide="user"></i>
+                        <input type="text" id="register-name" placeholder="Ex: Maria Joaquina" required>
+                    </div>
+                </div>
+
+                <div class="login-form-group">
+                    <label for="register-username">Nome de Usuário</label>
+                    <div class="login-input-wrapper">
+                        <i data-lucide="at-sign"></i>
+                        <input type="text" id="register-username" placeholder="Ex: maria.joaquina" required>
+                    </div>
+                </div>
+
+                <div class="login-form-group">
+                    <label for="register-password">Senha</label>
+                    <div class="login-input-wrapper">
+                        <i data-lucide="lock"></i>
+                        <input type="password" id="register-password" placeholder="Crie uma senha segura" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <i data-lucide="user-plus"></i> Criar Conta
+                </button>
+            </form>
+
+            <div class="login-footer">
+                Já tem uma conta? <button type="button" class="login-link" id="link-to-login">Fazer login</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="login.js"></script>
+    <script>
+        // Inicializa ícones do Lucide
+        lucide.createIcons();
+        
+        // Verifica se o modo escuro estava ativo para manter a consistência
+        if (localStorage.getItem('doce_controle_darkmode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+    </script>
+</body>
+</html>

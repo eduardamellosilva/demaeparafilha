@@ -23,28 +23,48 @@ let calendarCurrentDate = new Date();
 
 // Inicialização do App
 document.addEventListener('DOMContentLoaded', () => {
-    loadState();
-    initApp();
+    // Verifica autenticação antes de carregar dados
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            // Opcional: Mostrar nome do usuário logado se existir o elemento
+            const titleSubtitle = document.getElementById('tab-subtitle');
+            if (titleSubtitle && titleSubtitle.textContent.includes('Bem-vindo')) {
+                const firstName = (user.displayName || 'Confeiteira').split(' ')[0];
+                titleSubtitle.textContent = `Bem-vindo(a) de volta, ${firstName}! Veja como está sua confeitaria hoje.`;
+            }
+            
+            // Inicia o app (eventos e menus)
+            initApp();
+            
+            // Carrega dados da nuvem e escuta por mudanças
+            loadState();
+        } else {
+            // Se não estiver logado, redireciona
+            window.location.href = 'login.html';
+        }
+    });
 });
 
-// Carrega dados do LocalStorage
+// Carrega dados do Firebase (em tempo real)
 function loadState() {
-    const savedState = localStorage.getItem('doce_controle_state');
-    if (savedState) {
-        try {
-            state = JSON.parse(savedState);
-            // Garantir que todas as chaves básicas existem e são arrays
-            state.vendas = state.vendas || [];
-            state.gastos = state.gastos || [];
-            state.insumos = state.insumos || [];
-            state.receitas = state.receitas || [];
-        } catch (e) {
-            console.error('Erro ao carregar o estado:', e);
-            resetStateToDefault();
+    db.ref('confeitaria_state').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            state.vendas = data.vendas || [];
+            state.gastos = data.gastos || [];
+            state.insumos = data.insumos || [];
+            state.receitas = data.receitas || [];
+        } else {
+            state = { vendas: [], gastos: [], insumos: [], receitas: [] };
         }
-    } else {
-        resetStateToDefault();
-    }
+        
+        // Sempre que os dados mudarem na nuvem, atualiza a tela
+        renderAll();
+        updateDashboardChart();
+        checkEntregasHoje();
+    }, (error) => {
+        console.error("Erro ao ler do Firebase:", error);
+    });
 }
 
 // Reseta para estrutura básica vazia
@@ -53,45 +73,37 @@ function resetStateToDefault() {
     saveState();
 }
 
-// Salva dados no LocalStorage
+// Salva dados no Firebase
 function saveState() {
-    localStorage.setItem('doce_controle_state', JSON.stringify(state));
+    db.ref('confeitaria_state').set(state).catch(e => console.error("Erro ao salvar:", e));
 }
 
-// Inicializa a aplicação (Menus, Eventos, Renderizações)
+// Inicializa a aplicação (Menus e Eventos que não dependem de dados)
 function initApp() {
-    // Inicializa ícones do Lucide
     lucide.createIcons();
-    
-    // Configura navegação por abas
     initTabs();
-    
-    // Inicializa comportamento de menu sanduíche / colapsável
     initHamburgerMenu();
-    
-    // Configura controle de modais
     initModals();
-    
-    // Configura eventos de formulário
     initFormEvents();
-    
-    // Configura eventos de configurações e backup
     initSettingsEvents();
-    
-    // Inicializa dark mode
     initDarkMode();
-    
-    // Inicializa calendário (eventos de navegação)
     initCalendar();
-    
-    // Renderiza dados iniciais
-    renderAll();
-    
-    // Inicializa/Atualiza o gráfico do Dashboard
-    updateDashboardChart();
-    
-    // Verifica entregas do dia (após renderAll para ter dados carregados)
-    checkEntregasHoje();
+    initAuth();
+}
+
+function initAuth() {
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', (e) => {
+            e.preventDefault();
+            if(confirm('Deseja realmente sair?')) {
+                auth.signOut().then(() => {
+                    localStorage.removeItem('firebase_user_uid');
+                    window.location.href = 'login.html';
+                });
+            }
+        });
+    }
 }
 
 function initHamburgerMenu() {
@@ -209,7 +221,6 @@ function initTabs() {
 function initModals() {
     // Abrir Modais
     document.getElementById('btn-quick-sale').addEventListener('click', () => openModalVenda());
-    document.getElementById('btn-add-sale').addEventListener('click', () => openModalVenda());
     document.getElementById('btn-add-expense').addEventListener('click', () => openModalGasto());
     document.getElementById('btn-add-insumo').addEventListener('click', () => openModalInsumo());
     document.getElementById('btn-add-receita').addEventListener('click', () => openModalReceita());

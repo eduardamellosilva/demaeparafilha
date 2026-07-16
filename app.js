@@ -2072,7 +2072,7 @@ function initAIScanner() {
             
         } catch (err) {
             console.error('Erro na IA:', err);
-            alert('Erro ao processar a nota fiscal. Verifique se sua Chave de API está correta nas Configurações.');
+            alert('Falha ao processar nota: ' + (err.message || err));
         } finally {
             // Restore button
             labelBtn.innerHTML = originalText;

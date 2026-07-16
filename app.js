@@ -89,6 +89,7 @@ function initApp() {
     initDarkMode();
     initCalendar();
     initAuth();
+    initAIScanner();
 }
 
 function initAuth() {
@@ -1156,6 +1157,26 @@ function openModalReceita() {
  * --- SISTEMA DE CONFIGURAÇÃO E BACKUP ---
  */
 function initSettingsEvents() {
+    // API IA (Gemini)
+    const geminiInput = document.getElementById('input-gemini-key');
+    if (geminiInput) {
+        const savedKey = localStorage.getItem('gemini_api_key');
+        if (savedKey) {
+            geminiInput.value = savedKey;
+        }
+        
+        document.getElementById('btn-save-gemini-key').addEventListener('click', () => {
+            const key = geminiInput.value.trim();
+            if (key) {
+                localStorage.setItem('gemini_api_key', key);
+                alert('Chave salva com sucesso no seu dispositivo!');
+            } else {
+                localStorage.removeItem('gemini_api_key');
+                alert('Chave removida!');
+            }
+        });
+    }
+
     // Exportar dados
     document.getElementById('btn-export-backup').addEventListener('click', () => {
         if (state.vendas.length === 0 && state.gastos.length === 0 && state.insumos.length === 0 && state.receitas.length === 0) {
@@ -1956,4 +1977,108 @@ function getFormaPagLabel(forma) {
         'transferencia':  'Transferência'
     };
     return map[forma] || forma;
+}
+
+/**
+ * --- LEITOR DE NOTAS FISCAIS (IA GEMINI) ---
+ */
+function initAIScanner() {
+    const scanInput = document.getElementById('btn-scan-receipt');
+    if (!scanInput) return;
+
+    scanInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const apiKey = localStorage.getItem('gemini_api_key');
+        if (!apiKey) {
+            alert('Por favor, configure sua Chave de API do Gemini na aba "Configurações" antes de ler notas fiscais.');
+            scanInput.value = ''; // Reset
+            return;
+        }
+
+        // Show loading state
+        const labelBtn = scanInput.closest('.btn');
+        const originalText = labelBtn.innerHTML;
+        labelBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Lendo IA...';
+        lucide.createIcons();
+        labelBtn.style.pointerEvents = 'none';
+
+        try {
+            // Convert to Base64
+            const base64Image = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            // Call Gemini API
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: "Analise esta nota fiscal. Extraia os produtos e seus preços totais. Retorne EXATAMENTE UM JSON ARRAY neste formato: [{\"nome\": \"Farinha\", \"valor\": 5.90}]. Sem crases, sem markdown, apenas o array JSON válido." },
+                            { inline_data: { mime_type: file.type, data: base64Image } }
+                        ]
+                    }]
+                })
+            });
+
+            const result = await response.json();
+            
+            if (result.error) {
+                throw new Error(result.error.message);
+            }
+
+            let textContent = result.candidates[0].content.parts[0].text;
+            // Remove markdown format se a IA retornar (ex: ```json ... ```)
+            textContent = textContent.replace(/```json/g, '').replace(/```/g, '').trim();
+            
+            const itens = JSON.parse(textContent);
+            
+            if (itens && itens.length > 0) {
+                const hoje = new Date().toISOString().split('T')[0];
+                let cont = 0;
+                itens.forEach(item => {
+                    // Trata o valor numérico que a IA pode retornar como string "5.90" ou "5,90"
+                    let valor = typeof item.valor === 'string' ? item.valor.replace(',', '.') : item.valor;
+                    valor = parseFloat(valor);
+                    
+                    if (item.nome && !isNaN(valor) && valor > 0) {
+                        state.gastos.push({
+                            id: generateUUID(),
+                            descricao: item.nome,
+                            categoria: "Outros",
+                            data: hoje,
+                            valor: valor
+                        });
+                        cont++;
+                    }
+                });
+                
+                if (cont > 0) {
+                    saveState();
+                    renderGastos();
+                    alert(`${cont} itens foram adicionados aos seus gastos com sucesso! (Verifique a categoria se necessário)`);
+                } else {
+                    alert('Não consegui identificar itens válidos na nota.');
+                }
+            } else {
+                alert('Nenhum item encontrado na nota.');
+            }
+            
+        } catch (err) {
+            console.error('Erro na IA:', err);
+            alert('Erro ao processar a nota fiscal. Verifique se sua Chave de API está correta nas Configurações.');
+        } finally {
+            // Restore button
+            labelBtn.innerHTML = originalText;
+            lucide.createIcons();
+            labelBtn.style.pointerEvents = 'auto';
+            scanInput.value = ''; // Reset
+        }
+    });
 }

@@ -251,6 +251,10 @@
                         <input type="text" id="gastos-search" placeholder="Buscar por descrição...">
                     </div>
                     <div class="filter-box">
+                        <label class="btn btn-secondary" style="cursor:pointer; display:flex; align-items:center; gap:0.5rem; justify-content:center; margin:0;" title="Tire uma foto ou envie a imagem da nota fiscal">
+                            <i data-lucide="camera"></i> Ler Nota Fiscal
+                            <input type="file" id="btn-scan-receipt" accept="image/*" capture="environment" style="display:none">
+                        </label>
                         <select id="gastos-filter-category" class="form-control">
                             <option value="todos">Todas as Categorias</option>
                             <option value="Ingredientes">Ingredientes</option>
@@ -381,6 +385,23 @@
                                     <input type="file" id="btn-import-backup" accept=".json" style="display:none">
                                 </label>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- API IA Card -->
+                    <div class="card config-card">
+                        <div class="card-header">
+                            <h4 class="card-title">Inteligência Artificial (IA)</h4>
+                            <p class="card-subtitle">Chave para leitura automática de Notas Fiscais.</p>
+                        </div>
+                        <div class="card-body config-buttons">
+                            <p class="text-sm" style="margin-bottom: 0.5rem;">Para ler notas fiscais de graça, cole sua Chave de API do Google Gemini gerada no Google AI Studio. A chave fica salva apenas no seu dispositivo.</p>
+                            <div class="form-group" style="margin-bottom: 0.5rem;">
+                                <input type="password" id="input-gemini-key" class="form-control" placeholder="AIzaSy...">
+                            </div>
+                            <button class="btn btn-primary" id="btn-save-gemini-key" style="width:100%; justify-content: center;">
+                                <i data-lucide="save"></i> Salvar Chave
+                            </button>
                         </div>
                     </div>
 
